@@ -14,5 +14,5 @@ This program performs matrix multiplication in parallel using MPI. It compares t
 ## Output Example  
 Here’s an example of the program output:  
 
-![Output](output.png)  
+![Output](image.png)  
 
