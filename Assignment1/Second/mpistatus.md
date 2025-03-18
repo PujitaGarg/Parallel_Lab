@@ -17,10 +17,11 @@ This program demonstrates the use of the `MPI_Status` object in an `MPI_Recv` ca
    - The program uses `MPI_Barrier` to synchronize processes.
    - The MPI environment is finalized using `MPI_Finalize`.
 
+## Syntax of `MPI_Recv`
 ### MPI_Recv
 ```c
 int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status)
-```
+
 - `buf`: Pointer to the buffer where received data is stored.
 - `count`: Maximum number of elements to receive.
 - `datatype`: Data type of elements being received.
@@ -28,16 +29,6 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, M
 - `tag`: Message tag (or `MPI_ANY_TAG`).
 - `comm`: Communicator (typically `MPI_COMM_WORLD`).
 - `status`: MPI_Status object containing information about the received message.
-
-```
 ```
 
-## Output Example  
-Here’s an example of the program output:  
 
-![Output](image.png)  
-
-
-
-## References
-- [MPI Tutorial]([https://mpitutorial.com/](https://mpitutorial.com/tutorials/dynamic-receiving-with-mpi-probe-and-mpi-status/))
