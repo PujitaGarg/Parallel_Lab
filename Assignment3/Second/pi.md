@@ -1,11 +1,7 @@
 # MPI Parallel Computation of Pi
 
 ## Overview
-This program calculates an approximation of the mathematical constant **pi (\u03c0)** using the numerical integration method in a **parallel computing** environment with **MPI (Message Passing Interface)**. The **integration formula** used is:
-
-\[ \pi \approx \sum \frac{4}{1 + x^2} \]
-
-Each process calculates a portion of the sum and contributes to the final result using **MPI_Reduce**.
+This program calculates an approximation of the mathematical constant **pi (\u03c0)** using the numerical integration method in a **parallel computing** environment with **MPI (Message Passing Interface)**. Each process calculates a portion of the sum and contributes to the final result using **MPI_Reduce**.
 
 ## Explanation of the Code
 ### 1. Initialization and Setup
