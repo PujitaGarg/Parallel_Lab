@@ -6,130 +6,138 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpi.h>
+#include <mpi.h> 
 
-void swap(int *a, int *b) {
-    int temp = *a;
-    *a = *b;
-    *b = temp;
-}
-
-void local_sort(int *arr, int n) {
-    for (int i = 0; i < n - 1; i++) {
-        for (int j = 0; j < n - i - 1; j++) {
-            if (arr[j] > arr[j + 1]) {
-                swap(&arr[j], &arr[j + 1]);
-            }
-        }
-    }
-}
+int IncOrder(const void *e1, const void *e2);
+void CompareSplit(int nlocal, int *elmnts, int *relmnts, int *wspace, int keepsmall);
 
 int main(int argc, char *argv[]) {
-    int rank, size;
-    int *global_data = NULL;
-    int *local_data;         
-    int local_size;          
-    int n = 16;             
+    int n;              
+    int npes;           
+    int myrank;        
+    int nlocal;        
+    int *elmnts;        
+    int *relmnts;       
+    int oddrank;        
+    int evenrank;       
+    int *wspace;        
+    int i;
+    MPI_Status status;
 
+    /* Initialize MPI and get system information */
     MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_size(MPI_COMM_WORLD, &npes);
+    MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
 
-    
-    local_size = n / size;
-
-    
-    local_data = (int *)malloc(local_size * sizeof(int));
-
-
-    if (rank == 0) {
-        global_data = (int *)malloc(n * sizeof(int));
-        printf("Unsorted array: ");
-        for (int i = 0; i < n; i++) {
-            global_data[i] = rand() % 100; 
-            printf("%d ", global_data[i]);
+    /* Get total number of elements from command line */
+    if (argc != 2) {
+        if (myrank == 0) {
+            fprintf(stderr, "Usage: %s <number of elements>\n", argv[0]);
         }
-        printf("\n");
+        MPI_Finalize();
+        exit(EXIT_FAILURE);
+    }
+
+    n = atoi(argv[1]);
+    nlocal = n / npes; 
+
+    /* Allocate memory for the arrays */
+    elmnts  = (int *)malloc(nlocal * sizeof(int));
+    relmnts = (int *)malloc(nlocal * sizeof(int));
+    wspace  = (int *)malloc(nlocal * sizeof(int));
+
+    /* Fill-in the elmnts array with random elements */
+    srandom(myrank);
+    for (i = 0; i < nlocal; i++) {
+        elmnts[i] = random() % 100;
+    }
+
+    /* Sort the local elements using the built-in quicksort routine */
+    qsort(elmnts, nlocal, sizeof(int), IncOrder);
+
+    
+    if (myrank % 2 == 0) {
+        oddrank  = myrank - 1;
+        evenrank = myrank + 1;
+    } else {
+        oddrank  = myrank + 1;
+        evenrank = myrank - 1;
     }
 
     
-    MPI_Scatter(global_data, local_size, MPI_INT, local_data, local_size, MPI_INT, 0, MPI_COMM_WORLD);
-    local_sort(local_data, local_size);
+    if (oddrank == -1 || oddrank == npes) 
+        oddrank = MPI_PROC_NULL;
+    if (evenrank == -1 || evenrank == npes) 
+        evenrank = MPI_PROC_NULL;
 
-    int temp;
-    int sorted = 0;
-    while (!sorted) {
-        sorted = 1;
 
-        // Odd Phase
-        for (int i = 1; i < size; i += 2) {
-            if (rank == i && rank + 1 < size) {
-                
-                MPI_Send(&local_data[local_size - 1], 1, MPI_INT, rank + 1, 0, MPI_COMM_WORLD);
-                
-                MPI_Recv(&temp, 1, MPI_INT, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                if (local_data[local_size - 1] > temp) {
-                    swap(&local_data[local_size - 1], &temp);
-                    sorted = 0;
-                }
-               
-                MPI_Send(&temp, 1, MPI_INT, rank + 1, 0, MPI_COMM_WORLD);
-            } else if (rank == i + 1 && rank < size) {
-                
-                MPI_Recv(&temp, 1, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-               
-                MPI_Send(&local_data[0], 1, MPI_INT, rank - 1, 0, MPI_COMM_WORLD);
-                if (temp > local_data[0]) {
-                    swap(&temp, &local_data[0]);
-                    sorted = 0;
-                }
-              
-                MPI_Recv(&local_data[0], 1, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    for (i = 0; i < npes - 1; i++) {
+        if (i % 2 == 1) { /* Odd phase */
+            MPI_Sendrecv(elmnts, nlocal, MPI_INT, oddrank, 1, 
+                         relmnts, nlocal, MPI_INT, oddrank, 1, 
+                         MPI_COMM_WORLD, &status);
+        } else {
+            /* Even phase */
+            MPI_Sendrecv(elmnts, nlocal, MPI_INT, evenrank, 1, 
+                         relmnts, nlocal, MPI_INT, evenrank, 1, 
+                         MPI_COMM_WORLD, &status);
+        }
+
+        /* Perform Compare-Split operation */
+        CompareSplit(nlocal, elmnts, relmnts, wspace, myrank < status.MPI_SOURCE);
+    }
+
+    /* Print sorted elements in rank order */
+    for (i = 0; i < npes; i++) {
+        MPI_Barrier(MPI_COMM_WORLD);
+        if (myrank == i) {
+            printf("Rank %d sorted elements: ", myrank);
+            for (int j = 0; j < nlocal; j++) {
+                printf("%d ", elmnts[j]);
             }
+            printf("\n");
         }
-
-        // Even Phase
-        for (int i = 0; i < size; i += 2) {
-            if (rank == i && rank + 1 < size) {
-               
-                MPI_Send(&local_data[local_size - 1], 1, MPI_INT, rank + 1, 0, MPI_COMM_WORLD);
-                
-                MPI_Recv(&temp, 1, MPI_INT, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                if (local_data[local_size - 1] > temp) {
-                    swap(&local_data[local_size - 1], &temp);
-                    sorted = 0;
-                }
-                
-                MPI_Send(&temp, 1, MPI_INT, rank + 1, 0, MPI_COMM_WORLD);
-            } else if (rank == i + 1 && rank < size) {
-                
-                MPI_Recv(&temp, 1, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                
-                MPI_Send(&local_data[0], 1, MPI_INT, rank - 1, 0, MPI_COMM_WORLD);
-                if (temp > local_data[0]) {
-                    swap(&temp, &local_data[0]);
-                    sorted = 0;
-                }
-                
-                MPI_Recv(&local_data[0], 1, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            }
-        }
+        MPI_Barrier(MPI_COMM_WORLD);
     }
 
-    
-    MPI_Gather(local_data, local_size, MPI_INT, global_data, local_size, MPI_INT, 0, MPI_COMM_WORLD);
+    free(elmnts);
+    free(relmnts);
+    free(wspace);
 
-    // Print the sorted array in the root process
-    if (rank == 0) {
-        printf("Sorted array: ");
-        for (int i = 0; i < n; i++) {
-            printf("%d ", global_data[i]);
-        }
-        printf("\n");
-        free(global_data);
-    }
-
-    free(local_data);
     MPI_Finalize();
     return 0;
 }
+
+
+void CompareSplit(int nlocal, int *elmnts, int *relmnts, int *wspace, int keepsmall) {
+    int i, j, k;
+
+   
+    for (i = 0; i < nlocal; i++) {
+        wspace[i] = elmnts[i];
+    }
+
+    if (keepsmall) { 
+        for (i = j = k = 0; k < nlocal; k++) {
+            if (j == nlocal || (i < nlocal && wspace[i] < relmnts[j])) {
+                elmnts[k] = wspace[i++];
+            } else {
+                elmnts[k] = relmnts[j++];
+            }
+        }
+    } else { 
+        for (i = k = nlocal - 1, j = nlocal - 1; k >= 0; k--) {
+            if (j < 0 || (i >= 0 && wspace[i] >= relmnts[j])) {
+                elmnts[k] = wspace[i--];
+            } else {
+                elmnts[k] = relmnts[j--];
+            }
+        }
+    }
+}
+
+
+int IncOrder(const void *e1, const void *e2) {
+    return (*(int *)e1 - *(int *)e2);
+}
+
