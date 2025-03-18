@@ -13,5 +13,5 @@ This program estimates the value of Pi using the Monte Carlo method in a paralle
 ## Output Example  
 Here’s an example of the program output:  
 
-![Output](./images/output.png)  
+![Output](./image.png)  
 
