@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
         global_data = (int *)malloc(n * sizeof(int));
         printf("Unsorted array: ");
         for (int i = 0; i < n; i++) {
-            global_data[i] = rand() % 100; // Fill with random numbers
+            global_data[i] = rand() % 100; 
             printf("%d ", global_data[i]);
         }
         printf("\n");
