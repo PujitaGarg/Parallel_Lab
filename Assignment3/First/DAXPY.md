@@ -1,4 +1,4 @@
-# README: MPI Parallel DAXPY Operation
+#MPI Parallel DAXPY Operation
 
 ## Overview
 This program performs a parallel implementation of the **DAXPY** operation using **MPI** (Message Passing Interface). The operation follows the formula:
