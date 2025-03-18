@@ -1,4 +1,4 @@
-# README: MPI Parallel Prime Number Finder
+# MPI Parallel Prime Number Finder
 
 ## Overview
 This program uses MPI (Message Passing Interface) to distribute the task of finding prime numbers up to a specified maximum value among multiple processes. The master process (rank 0) assigns numbers to worker processes, which determine if the number is prime and send results back to the master.
