@@ -20,7 +20,7 @@ Here’s an example of the program output:
 
 ![Output](image.png)  
 
-##1.1 Using statically defined global variables
+## 1.1 Using statically defined global variables
 Code that uses statically defined global variables (device symbols) instead of dynamically allocated memory
 
 ## Key changes made:
@@ -34,7 +34,7 @@ Code that uses statically defined global variables (device symbols) instead of d
 ## Output 
 ![Output](image1.png)
 
-##1.2 Record timing data of the kernel execution.
+## 1.2 Record timing data of the kernel execution.
 Records and prints the kernel execution time using CUDA events.
 
 ## Key changes made:
@@ -50,7 +50,7 @@ Records and prints the kernel execution time using CUDA events.
 ## Output 
 ![Output](image2.png)
 
-##1.3 Queries the device properties
+## 1.3 Queries the device properties
 Code that queries the device properties and calculates the theoretical memory bandwidth in GB/s
 
 ## Key changes made:
@@ -63,15 +63,15 @@ Code that queries the device properties and calculates the theoretical memory ba
 ## Output 
 ![Output](image3.png)
 
-##1.4 Compare both the theoretical and measured bandwidths
+## 1.4 Compare both the theoretical and measured bandwidths
 Final modified code that calculates and compares both the theoretical and measured bandwidths
 
 ## Key changes made:
 
-1. Memory Operations Calculation:
-   -RBytes = N * sizeof(int) * 2 (reading from both d_a and d_b)
-   -WBytes = N * sizeof(int) (writing to d_c)
-   -totalBytes = RBytes + WBytes
+
+1. RBytes = N * sizeof(int) * 2 (reading from both d_a and d_b)
+2. WBytes = N * sizeof(int) (writing to d_c)
+3. totalBytes = RBytes + WBytes
 
 ## Output 
 ![Output](image4.png)
